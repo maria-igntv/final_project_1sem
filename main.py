@@ -12,7 +12,7 @@ screen = pygame.display.set_mode(window_size, 0, 32) #initiate screen
 
 display = pygame.Surface(window_size)
 
-bg = pygame.image.load('mipt_lk.jpg')
+bg = pygame.image.load('mipt_lk.jpg') # setting bg image
 
 tile_img = pygame.image.load('111.png')
 tile_size = tile_img.get_width()
@@ -25,23 +25,17 @@ player_left = pygame.image.load('student_left.png')
 player_up_right = pygame.image.load('student_fr.png')
 player_up_left = pygame.image.load('student_fl.png')
 
-game_map = [['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', '0', '0', '0'],
-            ['1','1','1','1','2','2','2','2','0','0','0','0','0','0','0','0','2','2','2', '2', '2', '2'],
-            ['1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1', '1', '1', '1'],
-            ]
+def load_map(path) :
+    f = open (path + '.txt', 'r')
+    data = f.read()
+    f.close()
+    data = data.split('\n')
+    game_map = []
+    for row in data:
+        game_map.append(list(row))
+    return game_map
+
+game_map = load_map('map')
 
 def collision_test(rect, tiles):
     hit_list = []
@@ -85,7 +79,8 @@ player_y_momentum = 0
 air_timer = 0
 
 player_rect = pygame.Rect(50, 50, player_right.get_width(), player_right.get_height())
-test_rec = pygame.Rect(350, 100, 100, 50)
+
+test_rec = pygame.Rect(350, 100, 50, 30)
 
 right = True # r l orientation of player
 up = False
@@ -117,9 +112,9 @@ while True: #game loop
 
     player_movement = [0, 0] # how much we intend to move the player
     if moving_right:
-        player_movement[0] += 2 # incresing velocity
+        player_movement[0] += 4 # incresing velocity
     if moving_left:
-        player_movement[0] -= 2
+        player_movement[0] -= 4
 
     player_movement[1] += player_y_momentum # gravity
     player_y_momentum += 0.2
@@ -145,8 +140,8 @@ while True: #game loop
     elif (right == False) and (up == True):
         display.blit(player_up_left, (player_rect.x, player_rect.y))
 
-   # if player_location[1] > window_size[1] - player_right.get_height():
-    #    player_location[1] = window_size[1] - player_right.get_height()
+   # if player_rect.x > window_size[0] - player_right.get_width():
+     # bg.scroll(x, y)  = window_size[1] - player_right.get_height()
 
     if moving_right == True:
         right = True
@@ -159,12 +154,12 @@ while True: #game loop
     if jump_left == True:
         up = True
         right = False
-        player_movement[1] += 4
+        player_movement[1] += 6
 
     if jump_right == True:
         up = True
         right = True
-        player_movement[1] += 4
+        player_movement[1] += 6
 
     if player_rect.colliderect(test_rec):
         pygame.draw.rect(display, (255, 0, 0), test_rec)
@@ -184,7 +179,7 @@ while True: #game loop
             if (event.key == K_UP) or (event.key == pygame.K_SPACE)    :
                 up = True
                 if air_timer < 6:
-                    player_y_momentum = -4  
+                    player_y_momentum = -5  
         if event.type == KEYUP:
             if event.key == K_RIGHT:
                 moving_right = False

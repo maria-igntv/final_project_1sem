@@ -62,6 +62,7 @@ animation_database['idle'] = load_animation('player_animations/idle',[7,7,40])
 
 game_map = load_map('map')
 
+bg = pygame.image.load('mipt.jpg') # setting bg image
 grass_img = pygame.image.load('grass.png')
 tile_img = pygame.image.load('111.png')
 scr_img = pygame.image.load('black.png')
@@ -122,7 +123,7 @@ def move(rect,movement,tiles):
     return rect, collision_types
 
 while True: # game loop
-    display.fill((204, 255, 255)) # clear screen by filling it with blue
+    display.blit(bg,(0,0))
 
     if grass_sound_timer > 0:
         grass_sound_timer -= 1

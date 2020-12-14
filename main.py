@@ -1,194 +1,274 @@
-import pygame, sys #import pygame and sys
+# -*- coding: utf-8 -*-
 
-clock = pygame.time.Clock() # set up the clock
+import pygame, sys, time
 
-from pygame.locals import * # import pygame modules
-pygame.init() # initiate pygame
-pygame.display.set_caption('PLatformer MIPT edition') # set the window name
+import mario
+import coinbox
+import coin
+import brick
+import flower
+import config
+import tmx
+import turtle
+import powerup
+from database import DataBase
 
-window_size = [550, 400] 
+FONT_NAME = "seguisym.ttf"
+if not pygame.mixer: print('Warning, sound disabled')
 
-screen = pygame.display.set_mode(window_size, 0, 32) #initiate screen
+class Profile(object, DataBase):
+    def __init__(self):
+        DataBase.__init__(self)
 
-display = pygame.Surface(window_size)
+        # init started profile`s value
+        self.username, self.rating, self.date = '', 0, 0
+        self.options = {
+            1: self.get_users,
+            2: self.play,
+            3: self.alert
+        }
+        self.basicMenu()
 
-bg = pygame.image.load('mipt_lk.jpg') # setting bg image
+    def alert(self):
+        print('hello MIPT =)')
 
-tile_img = pygame.image.load('111.png')
-tile_size = tile_img.get_width()
-grass_img = pygame.image.load('grass.jpg')
-grass_size = grass_img.get_width()
+    def basicMenu(self):
+        self.opt_text = ("""Hello! Choose option..
+                            1 - get all user data 
+                            2 - play
+                        Option:""")
+        self.opt = int(input(self.opt_text))
+        self.options[self.opt]()
 
-player_right = pygame.image.load('student_right.png')
-#player_right.set_colorkey((255, 255, 255))
-player_left = pygame.image.load('student_left.png')
-player_up_right = pygame.image.load('student_fr.png')
-player_up_left = pygame.image.load('student_fl.png')
 
-def load_map(path) :
-    f = open (path + '.txt', 'r')
-    data = f.read()
-    f.close()
-    data = data.split('\n')
-    game_map = []
-    for row in data:
-        game_map.append(list(row))
-    return game_map
+    def get_users(self):
+        data = {}
+        users = DataBase.get_dataframe(self, **data)
+        for user in users:
 
-game_map = load_map('map')
+            id_ = user[0]
+            name = user[1]
+            rating = user[2]
+            date = user[3]
+            print("""id: %s | name: %s  | rating: %s | Last join: %s """
+                  % (id_,name,rating,date))
 
-def collision_test(rect, tiles):
-    hit_list = []
-    for tile in tiles:
-        if rect.colliderect(tile):
-            hit_list.append(tile)
-    return hit_list
+        self.basicMenu()
 
-def move (rect, movement, tiles): # movement is a list of 2 values x and y
-    collision_types = {'top': False, 'bottom': False, 'right': False, 'left': False} # dctionary of collisions
-    rect.x += movement[0]
-    hit_list = collision_test(rect, tiles) # list of all things player collides with
-    for tile in hit_list:
-        # update the players position x axis
-        if movement[0] > 0: # moving right
-            rect.right = tile.left 
-            collision_types['right'] = True
-        elif movement[0] < 0:
-            rect.left = tile.right
-            collision_types['left'] = True
+    def play(self):
 
-        # update the players position by y axis
-    rect.y += movement[1]
-    hit_list = collision_test(rect, tiles) # collision check
-    for tile in hit_list:
-        if movement[1] > 0: # falling down
-            rect.bottom = tile.top
-            collision_types['bottom'] = True
-        elif movement[1] < 0:
-            rect.top = tile.bottom
-            collision_types['top'] = True
-    return rect, collision_types
+        self.username = str(input('Enter your username: '))
+        time_ = time.time()
+        data = {'username': self.username,
+                'date':time_}
+        try:
+            user = (DataBase.get_user(self, **data) or
+                    DataBase.append_user(self, **data))
 
-moving_right = False
-moving_left = False
-jump_left = False
-jump_right = False
+            if user:
+                self.rating = int(user[0][1])
+            else:
+                self.rating = 0
 
-#player_location = [50, 150]
-player_y_momentum = 0
-air_timer = 0
+        except Exception as E:
 
-player_rect = pygame.Rect(50, 50, player_right.get_width(), player_right.get_height())
+            raise TypeError('Invalid base data')
 
-test_rec = pygame.Rect(350, 100, 50, 30)
 
-right = True # r l orientation of player
-up = False
 
-while True: #game loop
+
+class MarioGame(object):
+
+    width = 1280
+    height = 720
+    game_over = False
+
+    def __init__(self, Profile):
+        self.pygame = pygame
+        self.Profile = Profile
+
+    def init(self):
+        self.pygame.init()
+        self.size = (self.width, self.height)
+        self.screen = pygame.display.set_mode(self.size)
+        self.clock = self.pygame.time.Clock()
+        self.time_step = 0
+
+        self.init_map('map.tmx', None, True)
+        self.bg_color = config.SKY
+
+    def init_map(self, map_file, new_pos, first_time):
+        self.tilemap = tmx.load(map_file, self.screen.get_size())
+
+        if first_time:
+            # condition for first attempt
+            self.sprites = tmx.SpriteLayer()
+            start_cell = self.tilemap.layers['triggers'].find('player')[0]
+            self.my_mario = mario.Mario((start_cell.px, start_cell.py), self.sprites)
+        else:
+            start_cell = self.tilemap.layers['triggers'].find(new_pos)[0]
+        self.my_mario.rect.topleft = (start_cell.px, start_cell.py)
+
+        self.coinboxs = tmx.SpriteLayer()
+        for _coinbox in self.tilemap.layers['triggers'].find('coinbox'):
+            box_type = getattr(coinbox, _coinbox.properties.get("type", "SECRET"))
+            prize = None
+            if _coinbox.properties.get("item"):
+                prize = getattr(powerup, _coinbox.properties.get("item"))
+            count = _coinbox.properties.get("count", 1)
+            coinbox.CoinBox(self, (_coinbox.px, _coinbox.py), box_type, prize, count, self.coinboxs)
+
+        self.bricks = tmx.SpriteLayer()
+        for _brick in self.tilemap.layers['triggers'].find('brick'):
+            brick.Brick(self, (_brick.px, _brick.py), self.bricks)
+
+        self.coins = tmx.SpriteLayer()
+        for _coin in self.tilemap.layers['triggers'].find('coin'):
+            coin.Coin((_coin.px, _coin.py), self.coins)
+
+        self.enemies = tmx.SpriteLayer()
+        for _turtle in self.tilemap.layers['triggers'].find('turtle'):
+            turtle.Turtle((_turtle.px, _turtle.py), self.enemies)
+        for _flower in self.tilemap.layers['triggers'].find('flower'):
+            color = getattr(flower, _flower.properties.get("color", "GREEN_FLOWER"))
+            flower.Flower((_flower.px, _flower.py), color, self.enemies)
+
+        self.powerups = tmx.SpriteLayer()
+        # layer order: background, midground + sprites, foreground
+        self.insert_layer(self.powerups, "powerups", 1)
+        self.insert_layer(self.coins, "coins", 2)
+        self.insert_layer(self.coinboxs, "coinboxs", 3)
+        self.insert_layer(self.bricks, "bricks", 4)
+        self.insert_layer(self.enemies, "enemies", 5)
+        self.insert_layer(self.sprites, "sprites", 6)
+
+
+    def insert_layer(self, sprites, layer_name, z_order):
+        self.tilemap.layers.add_named(sprites, layer_name)
+        self.tilemap.layers.remove(sprites)
+        self.tilemap.layers.insert(z_order, sprites)
+
+    def run(self):
+        # main game loop
+        while True:
+            # 60 fps
+            dt = self.clock.tick(60)
+            self.time_step += 1
+            # enumerate event
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT \
+                    or event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                    sys.exit(0)
+                # sprite handle event
+                self.handle(event)
+
+            self.update(dt)
+            # re-draw screen
+            self.draw(self.screen)
+
+    def draw(self, screen):
+        screen.fill(self.bg_color)
+        if not self.game_over:
+            for box in self.coinboxs:
+                box.draw_coin(screen)
+            self.tilemap.draw(screen)
+            for brick in self.bricks:
+                brick.draw_particles(screen)
+            # debuggng
+            #self.draw_debug(screen)
+            self.draw_score_texts(screen)
+            self.draw_profile_username(screen)
+            if self.my_mario.state == "dying":
+                self.draw_dying_screen(screen)
+        else:
+            self.draw_gameover_screen(screen)
+
+        self.pygame.display.flip()
+
+    def draw_debug(self, screen):
+        pygame.draw.rect(screen,  config.WHITE, pygame.Rect(80, 396, 20, 14))
+
+    def update(self, dt):
+        # may be not the best practice ..
+        if self.my_mario.state == "piped":
+            next_map = self.my_mario.pipe_obj.properties.get("map")
+            new_pos = self.my_mario.pipe_obj.properties.get("next")
+            self.init_map(next_map + '.tmx', new_pos, False)
+            if "underground" in next_map:
+                self.bg_color = config.BLACK
+            else:
+                self.bg_color = config.SKY
+            self.my_mario.state = "normal"
+
+        self.tilemap.update(dt / 1000., self)
+
+
+    def handle(self, event):
+        # event handling
+        self.my_mario.handle(event)
+
+    def draw_profile_username(self, screen):
+        if pygame.font:
+            name_text = pygame.font.Font(FONT_NAME, 24).render('Name: '+ str(self.Profile.username), 1, (255, 255, 255))
+            name_textpos = name_text.get_rect(left=10, top=50)
+            self.screen.blit(name_text, name_textpos)
+
+
+    def draw_score_texts(self, screen):
+        # drawing score
+        if pygame.font:
+            lives_text = pygame.font.Font(FONT_NAME, 24).render("Mario x %s" % self.my_mario.lives, 1, (255, 255, 255))
+            coins_text = pygame.font.Font(FONT_NAME, 24).render("Points x %s" % self.my_mario.collected_coins, 1, (255, 255, 255))
+            previous_rating_text = pygame.font.Font(FONT_NAME, 24).render("Previous Rating x %s" % self.Profile.rating,
+                                                                          1, (255, 255, 255)
+                                                                          )
+            prev_rate_textpos = previous_rating_text.get_rect(right=self.width-10, top=50)
+            over_textpos = lives_text.get_rect(left=10, top=10)
+            coins_textpos = coins_text.get_rect(right=self.width - 10, top=10)
+            self.screen.blit(lives_text, over_textpos)
+            self.screen.blit(coins_text, coins_textpos)
+            self.screen.blit(previous_rating_text, prev_rate_textpos)
     
-    display.blit(bg,(0,0))
 
-    tile_rects = []
-    y = 0
-    for row in game_map:
-        x = 0
-        for tile in row:
-            if tile == '1':
-                display.blit(tile_img, (x*tile_size , y*tile_size)) # tile if 1
-            if tile == '2':
-                display.blit(grass_img, (x*grass_size, y*grass_size)) # grass if 2
-            if tile != '0':
-                tile_rects.append(pygame.Rect(x*tile_size, y*tile_size, tile_size, tile_size)) # spacce
-            x += 1
-        y += 1
+    def draw_gameover_screen(self, screen):
+        screen.fill(config.BLACK)
+        if pygame.font:
+            over_text = pygame.font.Font(FONT_NAME, 36).render("Game over !!!", 1, (255, 255, 255))
+            quit_text = pygame.font.Font(FONT_NAME, 24).render("Press 'q' to exit.", 1, (255, 255, 255))
+            over_textpos = over_text.get_rect(centerx=self.width/2, centery=self.height/2 - 36)
+            quit_textpos = quit_text.get_rect(centerx=self.width/2, centery=self.height/2)
+            self.screen.blit(over_text, over_textpos)
+            self.screen.blit(quit_text, quit_textpos)
 
 
-    '''
-    # bouncing
-    if player_location[1] > window_size[1] - player_right.get_height():
-        player_y_momentum = -player_y_momentum
-    else:'''
+    def draw_dying_screen(self, screen):
+        screen.fill((128, 128, 128, 128), None, pygame.BLEND_RGBA_MULT)
+        if pygame.font:
+            font = pygame.font.Font(FONT_NAME, 24)
+            dead_text = font.render("Your person is died.", 1, (255, 255, 255))
+            again_text = font.render("Press ENTER for another one attempt !", 1, (255, 255, 255))
+            dead_textpos = dead_text.get_rect(centerx=self.width/2, centery=self.height/2 - 36)
+            again_textpos = again_text.get_rect(centerx=self.width/2, centery=self.height/2)
+            self.screen.blit(dead_text, dead_textpos)
+            self.screen.blit(again_text, again_textpos)
 
-    player_movement = [0, 0] # how much we intend to move the player
-    if moving_right:
-        player_movement[0] += 4 # incresing velocity
-    if moving_left:
-        player_movement[0] -= 4
-
-    player_movement[1] += player_y_momentum # gravity
-    player_y_momentum += 0.2
-    if player_y_momentum > 3:
-        player_y_momentum = 3 # can't fall faster than 3 sec
-
-    player_rect, collisions = move(player_rect, player_movement, tile_rects)
-
-    if collisions['bottom']:
-        player_y_momentum = 0
-        air_timer = 0
-    else:
-        air_timer += 1
+    def __del__(self):
+        # uploaded collected coins into base data
+        coins = self.my_mario.collected_coins
+        username = self.Profile.username
+        date = time.time()
+        # choosing max of these current rating and old rating
+        new_rating = max(self.Profile.rating, coins)
+        data = {'username':username,
+                'date':date,
+                'rating':new_rating}
+        self.Profile.user_commit(self, **data)
 
 
-    if (right == True) and (up == False):
-        display.blit(player_right, (player_rect.x, player_rect.y))
-    elif (right == True) and (up == True):
-        display.blit(player_up_right, (player_rect.x, player_rect.y))
+if __name__ == '__main__':
+    # init game
+    prof = Profile()
 
-    elif (right == False) and (up == False):
-        display.blit(player_left, (player_rect.x, player_rect.y))
-    elif (right == False) and (up == True):
-        display.blit(player_up_left, (player_rect.x, player_rect.y))
-
-   # if player_rect.x > window_size[0] - player_right.get_width():
-     # bg.scroll(x, y)  = window_size[1] - player_right.get_height()
-
-    if moving_right == True:
-        right = True
-        player_movement[0] += 4
-
-    if moving_left == True:
-        right = False
-        player_movement[0] -= 4
-
-    if jump_left == True:
-        up = True
-        right = False
-        player_movement[1] += 6
-
-    if jump_right == True:
-        up = True
-        right = True
-        player_movement[1] += 6
-
-    if player_rect.colliderect(test_rec):
-        pygame.draw.rect(display, (255, 0, 0), test_rec)
-    else:
-        pygame.draw.rect(display, (255, 255, 255), test_rec)
-        
-
-    for event in pygame.event.get():
-        if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-        if event.type == KEYDOWN:
-            if event.key == K_RIGHT:
-                moving_right = True
-            if event.key == K_LEFT:
-                moving_left = True
-            if (event.key == K_UP) or (event.key == pygame.K_SPACE)    :
-                up = True
-                if air_timer < 6:
-                    player_y_momentum = -5  
-        if event.type == KEYUP:
-            if event.key == K_RIGHT:
-                moving_right = False
-            if event.key == K_LEFT:
-                moving_left = False
-            if (event.key == pygame.K_SPACE) or (event.key == K_UP):
-                up = False 
-
-    surf = pygame.transform.scale(display, window_size)
-    screen.blit(surf, (0, 0))
-    pygame.display.update()
-    clock.tick(100)
+    g = MarioGame(prof)
+    g.init()
+    g.run()

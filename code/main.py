@@ -3,15 +3,11 @@
 import pygame, sys, time
 
 import mario
-import coinbox
-import coin
-import brick
-import flower
-import config
+from code import brick, coin, coinbox, config, flower
 import tmx
 import turtle
 import powerup
-from database import DataBase
+from code.database import DataBase
 
 FONT_NAME = "seguisym.ttf"
 if not pygame.mixer: print('Warning, sound disabled')
@@ -94,7 +90,7 @@ class MarioGame(object):
         self.clock = self.pygame.time.Clock()
         self.time_step = 0
 
-        self.init_map('map.tmx', None, True)
+        self.init_map('../look/map.tmx', None, True)
         self.bg_color = config.SKY
 
     def init_map(self, map_file, new_pos, first_time):
@@ -186,7 +182,7 @@ class MarioGame(object):
         self.pygame.display.flip()
 
     def draw_debug(self, screen):
-        pygame.draw.rect(screen,  config.WHITE, pygame.Rect(80, 396, 20, 14))
+        pygame.draw.rect(screen, config.WHITE, pygame.Rect(80, 396, 20, 14))
 
     def update(self, dt):
         # may be not the best practice ..

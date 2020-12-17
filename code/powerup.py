@@ -10,7 +10,7 @@ class PowerUp(sprite_base.SpriteBase):
     FRAME_WIDTH = 20
     FRAME_HEIGHT = 13
     PADDING = 1
-    img_file = "powerup.png"
+    img_file = "../look/powerup.png"
 
     def __init__(self, location, power_type, *groups):
         self.type = power_type

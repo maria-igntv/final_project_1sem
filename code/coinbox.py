@@ -1,7 +1,5 @@
-import os
-import pygame
 import config
-import coin
+from code import coin
 import powerup
 import sprite_base
 
@@ -15,7 +13,7 @@ class CoinBox(sprite_base.SpriteBase):
     COIN_WIDTH = 14
     FRAME_HEIGHT = 14
     PADDING = 0
-    img_file = "map.png"
+    img_file = "../look/map.png"
     count = 1
     my_coin = None
     ANIMATION_INTERVAL = 20

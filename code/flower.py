@@ -9,7 +9,7 @@ class Flower(sprite_base.SpriteBase):
     FRAME_WIDTH = 24
     FRAME_HEIGHT = 17
     PADDING = 1
-    img_file = "flower.png"
+    img_file = "../look/flower.png"
     ANIMATION_INTERVAL = 40
     h_facing = "down"
 

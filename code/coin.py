@@ -4,7 +4,7 @@ class Coin(sprite_base.SpriteBase):
 
     FRAME_WIDTH = 14
     FRAME_HEIGHT = 13
-    img_file = "coin.png"
+    img_file = "../look/coin.png"
     FRAMES = [0, 1, 2, 1]
     ANIMATION_INTERVAL = 20
 

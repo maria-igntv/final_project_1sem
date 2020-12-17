@@ -9,8 +9,8 @@ class Brick(sprite_base.SpriteBase):
     FRAME_HEIGHT = 14
     PADDING = 0
     TILE = [3, 4]
-    img_file = "map.png"
-    part_file = "part.png"
+    img_file = "../look/map.png"
+    part_file = "../look/part.png"
     PART_GRAVITY = 0.2
     GRAVITY = 0
     PART_SIZE = 5

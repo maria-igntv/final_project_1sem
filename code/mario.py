@@ -2,10 +2,9 @@ import pygame
 
 import powerup
 import turtle
-import flower
-import config
+from code import config, flower
 import sprite_base
-from database import DataBase
+from code.database import DataBase
 
 class Menu(DataBase):
     def login(self):

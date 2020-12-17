@@ -1,11 +1,12 @@
-import sprite_base
+from code import sprite_base
+
 
 class Turtle(sprite_base.SpriteBase):
 
     FRAME_WIDTH = 20
     FRAME_HEIGHT = 21
     PADDING = 1
-    img_file = "red_turtle.png"
+    img_file = "../look/red_turtle.png"
     RUNNING = [0, 1]
     SHELL_FRAMES = [0, 1, 2]
     FRAMES = None

@@ -1,5 +1,5 @@
 import pygame
-import config
+from code import config
 
 SECRET = 1
 HIDE = 72

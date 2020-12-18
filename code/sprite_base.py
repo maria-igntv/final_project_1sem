@@ -58,6 +58,7 @@ class SpriteBase(pygame.sprite.Sprite):
 
 
     def draw(self, screen):
+        # draw surface (screen)
         screen.blit(self.image, self.rect.topleft)
 
 
@@ -92,24 +93,9 @@ class SpriteBase(pygame.sprite.Sprite):
         if self.h_facing == "left":
             self.image = pygame.transform.flip(self.image, True, False)
 
-
-    def hit_platform_from_top(self, last, new, game):
-        pass
-
-
-    def hit_platform_from_bottom(self, last, new, game):
-        pass
-
-
-    def hit_platform_from_left(self, last, new, game):
-        pass
-
-
-    def hit_platform_from_right(self, last, new, game):
-        pass
-
-
+            
     def apply_gravity(self):
+        # apply gravity while moving
         dy = self.vy
         dx = self.vx
         self.vy += self.GRAVITY
@@ -117,6 +103,7 @@ class SpriteBase(pygame.sprite.Sprite):
 
 
     def collision_with_platform(self, last, new, game):
+        # display collision with platform
         for cell in game.tilemap.layers['triggers'].collide(new, 'blockers'):
             if last.bottom <= cell.top and new.bottom > cell.top \
                 and not (last.left == cell.right or last.right == cell.left):

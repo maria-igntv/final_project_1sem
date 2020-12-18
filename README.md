@@ -27,3 +27,7 @@ Classes:
 - Turtle
 - Coin
 - Flower
+
+Libraries:
+pygame, sprite_base, powerup, os, sys, time, mario, brick, 
+coin, coinbox, config, flower, turtle, setup

@@ -266,22 +266,6 @@ class Mario(sprite_base.SpriteBase):
         self.opacity = 255
         self.invi_time = 60
 
-
-    def create_halo_ring(self, game):
-        if not self.halo:
-            self.halo = pygame.sprite.Sprite()
-            self.halo.image = config.load_image_with_alpha("halo.png")
-            self.halo.rect = self.halo.image.get_rect()
-        self.halo.rect.topleft = self.rect.topleft
-        self.halo.rect.top = self.rect.top - 10
-        self.halo.rect.left += (self.rect.width - self.halo.rect.width)/2
-        game.sprites.add(self.halo)
-
-
-    def hit_platform_from_bottom(self, last, new, game):
-        self.v_state = "resting"
-
-
     def hit_turtle(self, last, new, enemy, game):
         if last.bottom <= enemy.rect.top and new.bottom >= enemy.rect.top:
             self.jump(12)

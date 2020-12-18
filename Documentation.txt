@@ -1,4 +1,6 @@
-Documentation for main.py
+Documentation 
+
+1. main.py
 
 
 class Profile(object, DataBase)
@@ -66,3 +68,50 @@ class MarioGame(object)
       """ uploaded collected coins into base data; 
       choosing max of these current rating and old rating """
       
+
+
+2. mario.py      
+
+
+class Mario(sprite_base.SpriteBase)
+    # set features of mario: imgs, sizes, starting properties
+    
+    def __init__(self, location, *groups)
+        # init location features
+        
+    def handle(self, event)
+        # connect pressing button with movements and conditions
+        
+    def jump(self, speed=9)
+        # jumping at the speed of 9
+        
+    def move_left(self)
+        # movement to the left
+        
+    def move_right(self)
+        # movement to the right
+        
+    def grow_up(self, size)
+        # growing to the size "medium"
+        
+    def update(self, dt, game)
+        """ implement moving and update game condition through small time interval         dt
+        display collison with pipe, power up, enemy; collection coins """
+        
+    def go_dying(self, game)
+        # dislay condition 'dead'
+        
+    def reborn(self, game)
+        # return mario to starting place after death 
+        
+    def became_invicible(self)
+        # mario can't lose life for a short period after reborn
+        
+    def back_to_normal(self)
+        # return mario to starting condition
+        
+    def hit_turtle(self, last, new, enemy, game)
+        # display interaction with enemy
+        
+    def got_damaged(self, game) 
+        # transfer mario to condition 'dead' after being damaged
